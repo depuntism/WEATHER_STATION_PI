@@ -1,13 +1,13 @@
 # -*- coding:utf-8 -*-
 import os
+import json
 import colorama
+import argparse
 from colorama import Fore, Style
 from weather import *
 from news import *
 from display import *
-import json
 from dotenv import load_dotenv
-import argparse
 from datetime import time as _t
 
 load_dotenv()

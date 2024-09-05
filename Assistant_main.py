@@ -13,9 +13,9 @@ from datetime import time as _t
 load_dotenv()
 colorama.init(autoreset=True)
 
-# Paris
-lat = "48.864716"
-lon = "2.349014"
+
+lat = os.environ.get("LATITUDE")
+lon = os.environ.get("LONGITUDE")
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
 debug = 0
@@ -24,7 +24,7 @@ if debug == 0:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--show-graph", help="Display bottom graphs", action="store_true")
+    parser.add_argument("--show-graph", help="Affiche le graphe du bas", action="store_true")
     args = parser.parse_args()
     return args
 
@@ -60,12 +60,11 @@ def main():
 
     # UPDATED AT
     display.draw_black.text(
-        (10, 8), f"Mis à jour le {weather.current_time()}", fill=0, font=font8
+        (10, 8), f"Mis à jour le {weather.current_time()}", fill=0, font=font12
     )
 
     ###################################################################################################################
     # CURRENT WEATHER
-    display.draw_black.text((225, 150), "PARIS", fill=0, font=font16)
     display.draw_icon(20, 55, "r", 75, 75,
                       weather.weather_description(weather.current_weather())[0])  # CURRENT WEATHER ICON
     display.draw_black.text((120, 15), weather.current_temp(), fill=0, font=font48)  # CURRENT TEMP
@@ -229,7 +228,7 @@ def main():
     ###################################################################################################################
     # NEWS UPDATE
     news_selected = news.selected_title()
-    display.draw_black.text((360, 10), "NEWS", fill=0, font=font24)
+    display.draw_black.text((360, 10), "ACTUALITÉS", fill=0, font=font24)
     for i in range(5):
         if len(news_selected) == 1:
             display.draw_black.text((360, 45), news_selected[0], fill=0, font=font14)
@@ -249,10 +248,10 @@ def main():
                 )
 
     ###################################################################################################################
-    print(Fore.GREEN + "Updating screen...")
+    print(Fore.GREEN + "Mise à jour de l'écran...")
     # display.im_black.show()
     # display.im_red.show()
-    print(Fore.GREEN + "\tPrinting...")
+    print(Fore.GREEN + "\tImpression en cours...")
 
     time.sleep(2)
     epd.display(epd.getbuffer(display.im_black), epd.getbuffer(display.im_red))
@@ -263,41 +262,37 @@ def main():
 if __name__ == "__main__":
     global been_reboot
     been_reboot = 1
-    while True:
-        try:
-            weather = Weather(lat, lon, api_key_weather)
-            # pollution = Pollution()
-            news = News()
-            break
-        except Exception as e:
-            current_time = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())
-            print(Fore.RED + "INITIALIZATION PROBLEM- @" + current_time)
-            print(e)
-            time.sleep(2)
+    try:
+        weather = Weather(lat, lon, api_key_weather)
+        # pollution = Pollution()
+        news = News()
+    except Exception as e:
+        current_time = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())
+        print(Fore.RED + "PROBLÈME D'INIIALISATION - @" + current_time)
+        print(e)
+        time.sleep(2)
 
     epd = epd7in5b_V2.EPD()
-    while True:
-        # Defining objects
-        current_time = time.strftime("%d/%m/%Y %H:%M", time.localtime())
-        print(Fore.YELLOW + "Begin update at" + current_time)
-        print(Fore.YELLOW + "Creating display")
-        display = Display()
-        # Update values
-        weather.update()
-        print(Fore.GREEN + "Weather Updated")
-        # pollution.update(lat, lon, api_key_weather)
-        news.update(api_key_news)
-        print(Fore.GREEN + "News Updated")
+    # Defining objects
+    current_time = time.strftime("%d/%m/%Y %H:%M", time.localtime())
+    print(Fore.YELLOW + "Début de mise à jour à " + current_time)
+    print(Fore.YELLOW + "Création de l'écran")
+    display = Display()
+    # Update values
+    weather.update()
+    print(Fore.GREEN + "Météo mise à jour")
+    # pollution.update(lat, lon, api_key_weather)
+    news.update(api_key_news)
+    print(Fore.GREEN + "Actualité mise à jour")
 
-        print(Fore.GREEN + Style.BRIGHT + "Main program running...")
-        epd.init()
-        epd.Clear()
-        check_for_shutdown()
-        main()
-        print(Fore.YELLOW + Style.BRIGHT + "Going to sleep...")
-        epd.init()
-        epd.sleep()
-        print(Fore.CYAN + "Sleeping ZZZzzzzZZZzzz")
-        print(Fore.CYAN + "Done")
-        print("------------")
-        time.sleep(1800)
+    print(Fore.GREEN + Style.BRIGHT + "Programme principal en cours d'exécution...")
+    epd.init()
+    epd.Clear()
+    check_for_shutdown()
+    main()
+    print(Fore.YELLOW + Style.BRIGHT + "Mise en veille...")
+    epd.init()
+    epd.sleep()
+    print(Fore.CYAN + "ZZZzzzzZZZzzz")
+    print(Fore.CYAN + "Terminé")
+    print("------------")

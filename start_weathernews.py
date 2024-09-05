@@ -22,7 +22,7 @@ for item in basic_iter:
 if len(list_comment) == 0:
 	print("Le job n'existe pas. Création en cours...")
 	time.sleep(1)
-	job = cron.new(command="/usr/bin/python3 /home/pi/Assistant_main.py >> /home/pi/Assistant_main.log") 
+	job = cron.new(command="/usr/bin/python3 /path/to/Assistant_main.py >> /path/to/Assistant_main.log") 
 	job.minute.every(15)
 	job.set_comment("Start Weather News Sation")
 	job.enable()

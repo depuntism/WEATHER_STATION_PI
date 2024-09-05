@@ -1,14 +1,10 @@
 # -*- coding:utf-8 -*-
-
 import time
 import requests
 import locale
 
-locale.setlocale(locale.LC_TIME, '')
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
-
-# lat = "48.8110548"
-# lon = "2.3"
 
 class Weather:
     def __init__(self, latitude, longitude, api_id):
@@ -174,7 +170,7 @@ class Pollution:
 
     def update(self, lattitude, longitude, api_id):
         self.data = requests.get(
-            f"http://api.openweathermap.org/data/3.0/air_pollution?lat={lattitude}&lon={longitude}&appid={api_id}").json()
+            f"http://api.openweathermap.org/data/3.0/air_pollution?lat={lattitude}&lon={longitude}&lang=fr&appid={api_id}").json()
         return self.data
 
     def co(self):

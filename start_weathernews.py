@@ -8,7 +8,7 @@ from datetime import datetime
 
 now = datetime.now()
 date_time = now.strftime("%d/%m/%y à %H:%M:%S")
-cron = CronTab("pi")
+cron = CronTab("YOUR_USERNAME")
 basic_iter = cron.find_comment("Start Weather News Sation")
 list_comment = []
 

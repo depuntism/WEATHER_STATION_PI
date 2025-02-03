@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from display import *
 from news import *
 from weather import *
-from tools import graph
+from tools import graph, location
 
 logger = logging.getLogger(__name__)
 dirname = os.path.dirname(__file__)
@@ -28,10 +28,11 @@ load_dotenv()
 colorama.init(autoreset=True)
 
 
-lat = os.environ.get("LATITUDE")
-lon = os.environ.get("LONGITUDE")
+lat, lon, city, = location.get_location()
+
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
+
 debug = 0
 if debug == 0:
     import epd7in5b_V2
@@ -84,7 +85,7 @@ def main():
 
     ###################################################################################################################
     # CURRENT WEATHER
-    display.draw_black.text((225, 150), "PARIS", fill=0, font=font16)
+    display.draw_black.text((225, 150), city.upper(), fill=0, font=font16)
     display.draw_icon(
         20, 55, "r", 75, 75, weather.weather_description(weather.current_weather())[0]
     )  # CURRENT WEATHER ICON

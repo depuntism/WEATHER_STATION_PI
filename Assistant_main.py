@@ -85,7 +85,7 @@ def main():
 
     ###################################################################################################################
     # CURRENT WEATHER
-    display.draw_black.text((225, 150), city.upper(), fill=0, font=font16)
+    display.draw_black.text((235, 150), city.upper(), fill=0, font=font16)
     display.draw_icon(
         20, 55, "r", 75, 75, weather.weather_description(weather.current_weather())[0]
     )  # CURRENT WEATHER ICON

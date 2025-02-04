@@ -1,17 +1,18 @@
-import requests
 import os
+import ipdata
 
 LAT = os.environ.get("LATITUDE")
 LON = os.environ.get("LONGITUDE")
 CITY = os.environ.get("CITY")
+API_KEY = ("IPDATA_API_KEY")
 
 
 def get_location():
     try:
-        response = requests.get("http://ip-api.com/json/")
-        data = response.json()
-        if data["status"] == "success":
-            return data["lat"], data["lon"], data["city"]
+        ipdata.api_key = API_KEY
+        data = ipdata.lookup()
+        if data["status"] == 200:
+            return data["latitude"], data["longitude"], data["city"]
         else:
             return LAT, LON, CITY
     except Exception:

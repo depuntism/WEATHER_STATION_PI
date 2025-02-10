@@ -4,7 +4,7 @@ import ipdata
 LAT = os.environ.get("LATITUDE")
 LON = os.environ.get("LONGITUDE")
 CITY = os.environ.get("CITY")
-API_KEY = ("IPDATA_API_KEY")
+API_KEY = os.environ.get("IPDATA_API_KEY")
 
 
 def get_location():

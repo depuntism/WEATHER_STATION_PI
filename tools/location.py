@@ -1,5 +1,6 @@
 import os
 import ipdata
+import json
 
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ LAT = os.environ.get("LATITUDE")
 LON = os.environ.get("LONGITUDE")
 CITY = os.environ.get("CITY")
 IPDATA_KEY = os.environ.get("IPDATA_API_KEY")
-is_location_enabled = os.environ.get("ENABLE_WEATHER_LOCATION")
+is_location_enabled = json.loads(os.environ.get("ENABLE_WEATHER_LOCATION"))
 
 def get_location():
     if is_location_enabled:

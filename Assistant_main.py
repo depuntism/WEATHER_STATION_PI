@@ -28,8 +28,7 @@ load_dotenv()
 colorama.init(autoreset=True)
 
 
-lat, lon, city, = location.get_location()
-
+lat, lon, city = location.get_location()
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
 
@@ -349,6 +348,7 @@ if __name__ == "__main__":
             # pollution.update(lat, lon, api_key_weather)
             news.update(api_key_news)
             print(Fore.GREEN + "Actualité mise à jour")
+            print(Fore.GREEN + "Localisation mise à jour")
             
             print(Fore.GREEN + Style.BRIGHT + "Programme principal en cours d'exécution...")
             epd.init()

@@ -52,21 +52,21 @@ class Weather:
     def current_wind(self):
         deg = self.data["current"]["wind_deg"]
         if deg < 30 or deg >= 330:
-            direction = "N"
+            direction = "Nord"
         elif 30 <= deg < 60:
-            direction = "NE"
+            direction = "Nord Est"
         elif 60 <= deg < 120:
-            direction = "E"
+            direction = "Est"
         elif 120 <= deg < 150:
-            direction = "SE"
+            direction = "Sud Est"
         elif 150 <= deg < 210:
-            direction = "S"
+            direction = "Sud"
         elif 210 <= deg < 240:
-            direction = "SO"
+            direction = "Sud Ouest"
         elif 240 <= deg < 300:
-            direction = "O"
+            direction = "Ouest"
         elif 300 <= deg < 330:
-            direction = "NO"
+            direction = "Nord Ouest"
         else:
             direction = "N/A"
         return "{:.0f}".format(

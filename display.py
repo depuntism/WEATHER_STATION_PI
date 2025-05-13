@@ -23,6 +23,7 @@ else:
     project_font = "font/Open_Sans/OpenSans-SemiBold.ttf"
 
 font8 = ImageFont.truetype(project_font, 8)
+font11 = ImageFont.truetype(project_font, 11)
 font12 = ImageFont.truetype(project_font, 12)
 font14 = ImageFont.truetype(project_font, 14)
 font16 = ImageFont.truetype(project_font, 16)

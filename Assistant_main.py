@@ -71,7 +71,7 @@ def main():
     )  # INNER FRAME
     # display.draw_black.line((540, 5, 540, 350), fill=0, width=1)  # VERTICAL SEPARATION
     display.draw_black.line(
-        (350, 5, 350, 350), fill=0, width=1
+        (353, 5, 353, 350), fill=0, width=1
     )  # VERTICAL SEPARATION slim
     display.draw_black.line(
         (5, 350, 795, 350), fill=0, width=1
@@ -79,7 +79,7 @@ def main():
 
     # UPDATED AT
     display.draw_black.text(
-        (10, 8), f"Mis à jour le {weather.current_time()}", fill=0, font=font8
+        (10, 8), f"Mis à jour le {weather.current_time()}", fill=0, font=font11
     )
 
     ###################################################################################################################
@@ -95,7 +95,7 @@ def main():
         (230, 15), weather.current_hum(), fill=0, font=font48
     )  # CURRENT HUM
     display.draw_black.text(
-        (245, 65), "Humidité", fill=0, font=font12
+        (307, 45), "Humidité", fill=0, font=font11
     )  # LABEL "HUMIDITY"
     display.draw_black.text(
         (120, 75),

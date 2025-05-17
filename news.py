@@ -1,29 +1,47 @@
 # -*- coding:utf-8 -*-
 
 import textwrap
-
 import requests
+import json
 
 
 class News:
     def __init__(self):
-        pass
+        self.news_list = None
 
     def update(self, api_id):
-        # TODO: check if google news api has been "fixed" (`sources=google-news-fr`)
-        self.news_list = requests.get(
-#           f"https://newsapi.org/v2/top-headlines?sources=google-news-fr&apiKey={api_id}").json()
-            f"https://newsapi.org/v2/everything?domains=francetvinfo.fr&apiKey={api_id}"
-        ).json()
-        return self.news_list
+        try:
+            response = requests.get(
+                f"https://newsdata.io/api/1/latest?country=fr&category=top&domainurl=lefigaro.fr&apikey={api_id}"
+            )
+            response.raise_for_status()
+            self.news_list = response.json()
+            return self.news_list
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur de requête : {e}")
+            self.news_list = None
+            return None
+        except json.JSONDecodeError:
+            print("Erreur de décodage JSON : la réponse n'est pas un JSON valide.")
+            self.news_list = None
+            return None
 
     def selected_title(self):
         list_news = []
-        if self.news_list["status"] == "ok":
-            for i in range(len(self.news_list["articles"])):
-                line = self.news_list["articles"][i]["title"]
-                line = textwrap.wrap(line, width=60)
-                list_news.append(line)
+        if self.news_list is None:
+            print("Erreur : Aucune donnée de nouvelles disponible.  Appeler update() d'abord.")
+            return []
+
+        if "results" in self.news_list:
+            for article in self.news_list["results"]:
+                if "title" in article:
+                    line = article["title"]
+                    line = textwrap.wrap(line, width=60)
+                    list_news.append(line)
+                else:
+                    print("Article sans titre trouvé.")
+                    list_news.append(["Titre non disponible"])
+            return list_news
         else:
-            list_news = ["Problème de chargement des news"]
-        return list_news
+            print("Erreur : 'results' n'est pas dans la réponse de l'API.")
+            return []

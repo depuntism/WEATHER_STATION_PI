@@ -342,6 +342,12 @@ if __name__ == "__main__":
             print(Fore.YELLOW + "Début de mise à jour à " + current_time)
             print(Fore.YELLOW + "Création de l'écran")
             display = Display()
+            
+            print(Fore.GREEN + Style.BRIGHT + "Programme principal en cours d'exécution...")
+            check_for_shutdown()
+            epd.init()
+            epd.Clear()
+            
             # Update values
             weather.update()
             print(Fore.GREEN + "Météo mise à jour")
@@ -349,11 +355,6 @@ if __name__ == "__main__":
             news.update(api_key_news)
             print(Fore.GREEN + "Actualité mise à jour")
             print(Fore.GREEN + "Localisation mise à jour")
-            
-            print(Fore.GREEN + Style.BRIGHT + "Programme principal en cours d'exécution...")
-            epd.init()
-            epd.Clear()
-            check_for_shutdown()
             main()
             print(Fore.YELLOW + Style.BRIGHT + "Mise en veille...")
             epd.init()

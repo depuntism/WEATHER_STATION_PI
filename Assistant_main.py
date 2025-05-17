@@ -6,7 +6,7 @@ from datetime import time
 
 import colorama
 from colorama import Fore, Style
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
 from display import *
 from news import *
@@ -31,7 +31,7 @@ colorama.init(autoreset=True)
 lat, lon, city = location.get_location()
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
-
+iscleaned = os.environ.get("CLEANED")
 debug = 0
 if debug == 0:
     import epd7in5b_V2
@@ -40,11 +40,23 @@ if debug == 0:
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-    "--show-graph", help="Affiche le graphe du bas", action="store_true"
+        "--show-graph", help="Affiche le graphe du bas", action="store_true"
     )
     parser.add_argument("--debug", help="debug mode", action="store_true")
     args = parser.parse_args()
     return args
+
+
+def set_cleaned_env(nouvelle_valeur, chemin_env=".env"):
+    """
+    Modifie la variable CLEANED dans le fichier .env.
+
+    Args:
+        nouvelle_valeur (str): La nouvelle valeur de CLEANED ("true" ou "false").
+        chemin_env (str, optional): Le chemin vers le fichier .env. Par défaut, ".env".
+    """
+    set_key(chemin_env, "CLEANED", nouvelle_valeur)
+    load_dotenv(chemin_env)  # Recharger pour que la modification soit prise en compte dans os.environ
 
 
 def check_for_shutdown():
@@ -52,13 +64,31 @@ def check_for_shutdown():
     if not args.debug:
         current_time = time.strftime("%H:%M", time.localtime())
         if "08:00" >= current_time >= "00:00":
-            try:
-                epd7in5b_V2.epdconfig.module_exit(cleanup=True)
-                print("Il est", current_time + ". Je me repose. A demain")
-                print("------------")
-                exit()
-            except Exception as e:
-                logger.warning(f"Impossible de dormir: {e}")
+            cleaned_from_env = os.environ.get("CLEANED")
+            if cleaned_from_env is None or cleaned_from_env.lower() == "false":
+                try:
+                    epd = epd7in5b_V2.EPD() # Initialiser ici car utilisé uniquement dans ce bloc
+                    epd.init()
+                    epd.Clear()
+                    epd7in5b_V2.epdconfig.module_exit(cleanup=True)
+                    print("Ecran nettoyé")
+                    print("Il est", current_time + ". Je me repose. A demain")
+                    print("------------")
+                    set_cleaned_env("true")  # Modifier la variable dans .env
+                    exit()
+                except Exception as e:
+                    logger.warning(f"Impossible de dormir: {e}")
+            else:
+                try:
+                    epd7in5b_V2.epdconfig.module_exit(cleanup=True)
+                    print("Ecran déjà nettoyé")
+                    print("Il est", current_time + ". Je me repose. A demain")
+                    print("------------")
+                    exit()
+                except Exception as e:
+                    logger.warning(f"Impossible de dormir (vérification .env): {e}")
+        else:
+            set_cleaned_env("false")  # Modifier la variable dans .env
 
 
 def main():
@@ -342,12 +372,12 @@ if __name__ == "__main__":
             print(Fore.YELLOW + "Début de mise à jour à " + current_time)
             print(Fore.YELLOW + "Création de l'écran")
             display = Display()
-            
+
             print(Fore.GREEN + Style.BRIGHT + "Programme principal en cours d'exécution...")
             check_for_shutdown()
             epd.init()
             epd.Clear()
-            
+
             # Update values
             weather.update()
             print(Fore.GREEN + "Météo mise à jour")

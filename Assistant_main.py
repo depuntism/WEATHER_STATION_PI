@@ -48,15 +48,8 @@ def parse_arguments():
 
 
 def set_cleaned_env(nouvelle_valeur, chemin_env=".env"):
-    """
-    Modifie la variable CLEANED dans le fichier .env.
-
-    Args:
-        nouvelle_valeur (str): La nouvelle valeur de CLEANED ("true" ou "false").
-        chemin_env (str, optional): Le chemin vers le fichier .env. Par défaut, ".env".
-    """
     set_key(chemin_env, "CLEANED", nouvelle_valeur)
-    load_dotenv(chemin_env)  # Recharger pour que la modification soit prise en compte dans os.environ
+    load_dotenv(chemin_env)
 
 
 def check_for_shutdown():
@@ -67,17 +60,17 @@ def check_for_shutdown():
             cleaned_from_env = os.environ.get("CLEANED")
             if cleaned_from_env is None or cleaned_from_env.lower() == "false":
                 try:
-                    epd = epd7in5b_V2.EPD() # Initialiser ici car utilisé uniquement dans ce bloc
+                    epd = epd7in5b_V2.EPD()
                     epd.init()
                     epd.Clear()
                     epd7in5b_V2.epdconfig.module_exit(cleanup=True)
                     print("Ecran nettoyé")
                     print("Il est", current_time + ". Je me repose. A demain")
                     print("------------")
-                    set_cleaned_env("true")  # Modifier la variable dans .env
+                    set_cleaned_env("true")
                     exit()
                 except Exception as e:
-                    logger.warning(f"Impossible de dormir: {e}")
+                    logger.warning(f"Impossible de dormir : {e}")
             else:
                 try:
                     epd7in5b_V2.epdconfig.module_exit(cleanup=True)
@@ -86,9 +79,9 @@ def check_for_shutdown():
                     print("------------")
                     exit()
                 except Exception as e:
-                    logger.warning(f"Impossible de dormir (vérification .env): {e}")
+                    logger.warning(f"Impossible de dormir : {e}")
         else:
-            set_cleaned_env("false")  # Modifier la variable dans .env
+            set_cleaned_env("false")
 
 
 def main():

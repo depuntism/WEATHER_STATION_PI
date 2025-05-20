@@ -300,33 +300,37 @@ def main():
     # NEWS UPDATE
     news_selected = news.selected_title()
     display.draw_black.text((360, 10), "ACTUALITÉS", fill=0, font=font24)
-    for i in range(5):
-        if len(news_selected) == 1:
-            display.draw_black.text((360, 45), news_selected[0], fill=0, font=font14)
-            break
-        else:
-            if len(news_selected[i]) <= 3:
-                for j in range(len(news_selected[i])):
-                    display.draw_black.text(
-                        (360, 45 + j * 15 + i * 60),
-                        news_selected[i][j],
-                        fill=0,
-                        font=font14,
-                    )
+    if not news_selected:
+        display.draw_black.text((360, 45), "Aucune actualité disponible.", fill=0, font=font14)
+                 
+    else:
+        for i in range(min(5, len(news_selected))):
+            if len(news_selected) == 1:
+                display.draw_black.text((360, 45), news_selected[0], fill=0, font=font14)
+                break    
             else:
-                for j in range(2):
+                if len(news_selected[i]) <= 3:
+                    for j in range(len(news_selected[i])):
+                        display.draw_black.text(
+                            (360, 45 + j * 15 + i * 60),
+                            news_selected[i][j],
+                            fill=0,
+                            font=font14,
+                        )
+                else:
+                    for j in range(2):
+                        display.draw_black.text(
+                            (360, 45 + j * 15 + i * 60),
+                            news_selected[i][j],
+                            fill=0,
+                            font=font14,
+                        )
                     display.draw_black.text(
-                        (360, 45 + j * 15 + i * 60),
-                        news_selected[i][j],
+                        (360, 45 + 2 * 15 + i * 60),
+                        f"{news_selected[i][2]}[...]",
                         fill=0,
                         font=font14,
                     )
-                display.draw_black.text(
-                    (360, 45 + 2 * 15 + i * 60),
-                    f"{news_selected[i][2]}[...]",
-                    fill=0,
-                    font=font14,
-                )
 
     ###################################################################################################################
     print(Fore.GREEN + "Mise à jour de l'écran...")

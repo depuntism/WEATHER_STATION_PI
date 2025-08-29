@@ -29,7 +29,7 @@ class News:
     def selected_title(self):
         list_news = []
         if self.news_list is None:
-            print("Erreur : Aucune donnée de nouvelles disponible.  Appeler update() d'abord.")
+            print("Erreur : Aucune actualité disponible")
             return []
 
         if "results" in self.news_list:

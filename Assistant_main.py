@@ -140,30 +140,40 @@ def main():
     # NEXT HOUR RAIN
     try:
         data_rain = weather.rain_next_hour()
-
-        # FRAME
-        display.draw_black.text(
-            (20, 150),
-            "Pluie dans l'heure - " + time.strftime("%H:%M", time.localtime()),
-            fill=0,
-            font=font16,
-        )  # NEXT HOUR RAIN LABEL
-        display.draw_black.rectangle(
-            (20, 175, 320, 195), fill=255, outline=0, width=1
-        )  # Red rectangle = rain
-
-        # LABEL
-        for i in range(len(data_rain)):
-            display.draw_black.line(
-                (20 + i * 50, 175, 20 + i * 50, 195), fill=0, width=1
+        if data_rain[0][0] == "Erreur":
+            display.draw_black.text(
+                (20, 150),
+                "Pluie dans l'heure - " + time.strftime("%H:%M", time.localtime()),
+                fill=0,
+                font=font16,
             )
             display.draw_black.text(
-                (20 + i * 50, 195), data_rain[i][0], fill=0, font=font16
+                (20, 180),
+                "Erreur : prévision des pluies indisponibles",
+                fill=0,
+                font=font14,
             )
-            if data_rain[i][1] != 0:
-                display.draw_red.rectangle(
-                    (20 + i * 50, 175, 20 + (i + 1) * 50, 195), fill=0
+        else:
+            display.draw_black.text(
+                (20, 150),
+                "Pluie dans l'heure - " + time.strftime("%H:%M", time.localtime()),
+                fill=0,
+                font=font16,
+            )
+            display.draw_black.rectangle(
+                (20, 175, 320, 195), fill=255, outline=0, width=1
+            )
+            for i in range(len(data_rain)):
+                display.draw_black.line(
+                    (20 + i * 50, 175, 20 + i * 50, 195), fill=0, width=1
                 )
+                display.draw_black.text(
+                    (20 + i * 50, 195), data_rain[i][0], fill=0, font=font16
+                )
+                if data_rain[i][1] != 0:
+                    display.draw_red.rectangle(
+                        (20 + i * 50, 175, 20 + (i + 1) * 50, 195), fill=0
+                    )
     except Exception:
         pass
 

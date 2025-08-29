@@ -78,21 +78,29 @@ class Weather:
         return description
 
     def rain_next_hour(self):
-        input_minutely = self.data["minutely"]
-        rain = []
-        rain_next_hour = [
-            ["+10'", 0],
-            ["+20'", 0],
-            ["+30'", 0],
-            ["+40'", 0],
-            ["+50'", 0],
-            ["+1h", 0],
-        ]
-        for i in range(len(input_minutely)):
-            rain.append(input_minutely[i]["precipitation"])
-        for i in range(6):
-            rain_next_hour[i][1] = sum(rain[i * 10 + 1 : i * 10 + 10])
-        return rain_next_hour
+        rain_data = []
+        if "minutely" in self.data and len(self.data["minutely"]) > 0:
+            # Mode minutely : affiche "10'", "20'", ..., "50'", puis "1h" pour la 60ème minute
+            for i in range(10, 60, 10):
+                if i < len(self.data["minutely"]):
+                    precipitation = self.data["minutely"][i].get("precipitation", 0)
+                    time_str = f"{i}'"
+                    rain_data.append((time_str, precipitation))
+            # Ajouter "1h" pour la 60ème minute si elle existe
+            if len(self.data["minutely"]) >= 60:
+                precipitation = self.data["minutely"][59].get("precipitation", 0)
+                rain_data.append(("1h", precipitation))
+        elif "hourly" in self.data and len(self.data["hourly"]) > 0:
+            # Mode hourly : affiche "1h", "2h", etc.
+            for idx, hour in enumerate(self.data["hourly"][:6], start=1):
+                precipitation = hour.get("rain", {}).get("1h", 0)
+                time_str = f"{idx}h"
+                rain_data.append((time_str, precipitation))
+        else:
+            # Aucune donnée disponible
+            rain_data.append(("Erreur", 0))
+
+        return rain_data
 
     def hourly_forecast(self):
         hourly = {

@@ -118,7 +118,7 @@ def main():
         (230, 15), weather.current_hum(), fill=0, font=font48
     )  # CURRENT HUM
     display.draw_black.text(
-        (307, 45), "Humidité", fill=0, font=font11
+        (307, 55), "Humidité", fill=0, font=font11
     )  # LABEL "HUMIDITY"
     display.draw_black.text(
         (120, 75),

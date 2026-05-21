@@ -1,10 +1,8 @@
 # -*- coding:utf-8 -*-
+
 import textwrap
 import requests
 import json
-
-# Timeout par défaut : 5s (connexion) / 15s (lecture)
-DEFAULT_TIMEOUT = (5, 15)
 
 
 class News:
@@ -14,8 +12,7 @@ class News:
     def update(self, api_id):
         try:
             response = requests.get(
-                f"https://newsdata.io/api/1/latest?country=fr&category=top&domainurl=lefigaro.fr&apikey={api_id}",
-                timeout=DEFAULT_TIMEOUT,
+                f"https://newsdata.io/api/1/latest?country=fr&category=top&domainurl=lefigaro.fr&apikey={api_id}"
             )
             response.raise_for_status()
             self.news_list = response.json()
@@ -34,6 +31,7 @@ class News:
         if self.news_list is None:
             print("Erreur : Aucune actualité disponible")
             return []
+
         if "results" in self.news_list:
             for article in self.news_list["results"]:
                 if "title" in article:

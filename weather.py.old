@@ -1,13 +1,11 @@
 # -*- coding:utf-8 -*-
+
 import locale
 import time
+
 import requests
 
-# Timeout par défaut : 5s (connexion) / 15s (lecture)
-DEFAULT_TIMEOUT = (5, 15)
-
-locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
-
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
 class Weather:
     def __init__(self, latitude, longitude, api_id):
@@ -16,8 +14,7 @@ class Weather:
         self.api_key = api_id
         self.prevision = [0, [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]]
         self.data = requests.get(
-            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}",
-            timeout=DEFAULT_TIMEOUT,
+            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}"
         ).json()
         self.prevision[0] = self.data["daily"][0]["dt"]
         self.prevision[1][6] = [
@@ -28,8 +25,7 @@ class Weather:
 
     def update(self):
         self.data = requests.get(
-            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}",
-            timeout=DEFAULT_TIMEOUT,
+            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}"
         ).json()
         return self.data
 
@@ -73,10 +69,9 @@ class Weather:
             direction = "Nord Ouest"
         else:
             direction = "N/A"
-        return (
-            "{:.0f}".format(self.data["current"]["wind_speed"] * 3.6) + "km/h",
-            direction,
-        )
+        return "{:.0f}".format(
+            self.data["current"]["wind_speed"] * 3.6
+        ) + "km/h", direction
 
     def current_weather(self):
         description = self.data["current"]["weather"][0]["id"]
@@ -85,17 +80,18 @@ class Weather:
     def rain_next_hour(self):
         rain_data = []
         if "minutely" in self.data and len(self.data["minutely"]) > 0:
-            # Mode minutely : "10'", "20'", ..., "50'", puis "1h"
+            # Mode minutely : affiche "10'", "20'", ..., "50'", puis "1h" pour la 60ème minute
             for i in range(10, 60, 10):
                 if i < len(self.data["minutely"]):
                     precipitation = self.data["minutely"][i].get("precipitation", 0)
                     time_str = f"{i}'"
                     rain_data.append((time_str, precipitation))
+            # Ajouter "1h" pour la 60ème minute si elle existe
             if len(self.data["minutely"]) >= 60:
                 precipitation = self.data["minutely"][59].get("precipitation", 0)
                 rain_data.append(("1h", precipitation))
         elif "hourly" in self.data and len(self.data["hourly"]) > 0:
-            # Mode hourly : "1h", "2h", etc.
+            # Mode hourly : affiche "1h", "2h", etc.
             for idx, hour in enumerate(self.data["hourly"][:6], start=1):
                 precipitation = hour.get("rain", {}).get("1h", 0)
                 time_str = f"{idx}h"
@@ -103,6 +99,7 @@ class Weather:
         else:
             # Aucune donnée disponible
             rain_data.append(("Erreur", 0))
+
         return rain_data
 
     def hourly_forecast(self):
@@ -111,7 +108,7 @@ class Weather:
             "+6h": {"temp": "", "pop": "", "id": ""},
             "+12h": {"temp": "", "pop": "", "id": ""},
         }
-        # +3h
+        # Forecast +3h
         hourly["+3h"]["temp"] = (
             "{:.0f}".format(self.data["hourly"][3]["temp"] - 273.15) + "°C"
         )
@@ -119,7 +116,7 @@ class Weather:
             "{:.0f}".format(self.data["hourly"][3]["pop"] * 100) + "%"
         )
         hourly["+3h"]["id"] = self.data["hourly"][3]["weather"][0]["id"]
-        # +6h
+        # Forecast +3h
         hourly["+6h"]["temp"] = (
             "{:.0f}".format(self.data["hourly"][6]["temp"] - 273.15) + "°C"
         )
@@ -127,7 +124,7 @@ class Weather:
             "{:.0f}".format(self.data["hourly"][6]["pop"] * 100) + "%"
         )
         hourly["+6h"]["id"] = self.data["hourly"][6]["weather"][0]["id"]
-        # +12h
+        # Forecast +3h
         hourly["+12h"]["temp"] = (
             "{:.0f}".format(self.data["hourly"][12]["temp"] - 273.15) + "°C"
         )
@@ -135,6 +132,7 @@ class Weather:
             "{:.0f}".format(self.data["hourly"][12]["pop"] * 100) + "%"
         )
         hourly["+12h"]["id"] = self.data["hourly"][12]["weather"][0]["id"]
+
         return hourly
 
     def daily_forecast(self):
@@ -160,6 +158,7 @@ class Weather:
             )
             daily[key]["id"] = self.data["daily"][i]["weather"][0]["id"]
             i += 1
+
         return daily
 
     def graph_p_t(self):
@@ -239,6 +238,7 @@ class Weather:
                 elif id == 803 or id == 804:
                     icon = "100_clouds"
                     weather_detail = "Couvert"
+
         return icon, weather_detail
 
     def alert(self):
@@ -265,8 +265,7 @@ class Pollution:
 
     def update(self, lattitude, longitude, api_id):
         self.data = requests.get(
-            f"http://api.openweathermap.org/data/3.0/air_pollution?lat={lattitude}&lon={longitude}&appid={api_id}",
-            timeout=DEFAULT_TIMEOUT,
+            f"http://api.openweathermap.org/data/3.0/air_pollution?lat={lattitude}&lon={longitude}&appid={api_id}"
         ).json()
         return self.data
 

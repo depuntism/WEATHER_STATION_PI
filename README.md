@@ -159,7 +159,7 @@ python3 start_weathernews.py
 |---|---|---|
 | Écran rafraîchi | `journalctl -u weatherstation --since "-1 hour"` | Séquence complète sans `Exception` |
 | Météo OK | `python3 -c "from weather import Weather; w=Weather('43.6','1.433'); print(w.current_temp())"` | Température en °C |
-| Actualités OK | `journalctl -u weatherstation | grep -a "Actualité"` | `Actualité mise à jour`, **pas** de ligne `401` |
+| Actualités OK | `journalctl -u weatherstation grep -a "Actualité"` | `Actualité mise à jour`, **pas** de ligne `401` |
 | Log interne | `tail -20 conf/logging/main_error.log` | Erreurs éventuelles ; seuls les `logger` y sont écrits (les `print` vont dans le journal) |
 | Power cycle écran | `grep -ai "reset hardware" conf/logging/main_error.log` | Une entrée toutes les ~100 cycles (~10 h) |
 | Service actif | `systemctl status weatherstation.timer` | `Active: waiting`, prochaine exécution affichée |

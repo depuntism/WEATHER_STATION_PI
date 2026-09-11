@@ -53,7 +53,7 @@ La version *HAT* se branche directement sur le connecteur 40 broches. Version à
 
 ```bash
 cd ~
-git clone https://github.com/VOTRE-COMPTE/VOTRE-REPO.git weather_station
+git clone https://github.com/depuntism/WEATHER_STATION_PI.git
 cd weather_station
 
 # Compilateur + en-têtes Python : nécessaires pour construire spidev sous Python 3.11

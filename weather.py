@@ -6,55 +6,109 @@ import requests
 # Timeout par défaut : 5s (connexion) / 15s (lecture)
 DEFAULT_TIMEOUT = (5, 15)
 
-locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
+try:
+    locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")
+except locale.Error:
+    pass
+
+BASE_URL = "https://api.open-meteo.com/v1/forecast"
+AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
+
+# Correspondance codes WMO -> icônes/détails (jour)
+WMO_DAY = {
+    0: ("sun", "Beau temps"),
+    1: ("25_clouds", "Peu nuageux"),
+    2: ("50_clouds", "Nuageux"),
+    3: ("100_clouds", "Couvert"),
+    45: ("atm", "Brouillard"),
+    48: ("atm", "Brouillard"),
+    51: ("drizzle", "Bruine"),
+    53: ("drizzle", "Bruine"),
+    55: ("drizzle", "Bruine"),
+    56: ("drizzle", "Bruine"),
+    57: ("drizzle", "Bruine"),
+    61: ("rain", "Pluie"),
+    63: ("rain", "Pluie"),
+    65: ("rain", "Pluie"),
+    66: ("rain", "Pluie"),
+    67: ("rain", "Pluie"),
+    71: ("snow", "Neige"),
+    73: ("snow", "Neige"),
+    75: ("snow", "Neige"),
+    77: ("snow", "Neige"),
+    80: ("rain", "Pluie"),
+    81: ("rain", "Pluie"),
+    82: ("rain", "Pluie"),
+    85: ("snow", "Neige"),
+    86: ("snow", "Neige"),
+    95: ("thunder", "Orage"),
+    96: ("thunder", "Orage"),
+    99: ("thunder", "Orage"),
+}
+
+# Correspondance codes WMO -> icônes/détails (nuit)
+WMO_NIGHT = dict(WMO_DAY)
+WMO_NIGHT[0] = ("moon", "Beau temps")
+WMO_NIGHT[1] = ("26_cloudy_night", "Peu nuageux")
 
 
 class Weather:
-    def __init__(self, latitude, longitude, api_id):
+    def __init__(self, latitude, longitude, api_id=None):
         self.latitude = latitude
         self.longitude = longitude
-        self.api_key = api_id
         self.prevision = [0, [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]]
-        self.data = requests.get(
-            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}",
-            timeout=DEFAULT_TIMEOUT,
-        ).json()
-        self.prevision[0] = self.data["daily"][0]["dt"]
+        self.data = self._fetch()
+        self.sunrise = self.data["daily"]["sunrise"][0]
+        self.sunset = self.data["daily"]["sunset"][0]
+        self.prevision[0] = self.data["daily"]["time"][0]
         self.prevision[1][6] = [
-            self.data["daily"][0]["pressure"],
-            round(self.data["daily"][0]["temp"]["day"] - 273.15, 0),
+            round(self.data["current"]["pressure_msl"]),
+            round(self.data["current"]["temperature_2m"]),
         ]
-        pass
+
+    def _fetch(self):
+        params = (
+            f"latitude={self.latitude}&longitude={self.longitude}"
+            "&current=temperature_2m,relative_humidity_2m,cloud_cover,"
+            "pressure_msl,wind_speed_10m,wind_direction_10m,weather_code"
+            "&minutely_15=precipitation&forecast_minutely_15=4"
+            "&hourly=temperature_2m,precipitation_probability,weather_code"
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,"
+            "precipitation_probability_max,sunrise,sunset"
+            "&models=best_match&timezone=auto&timeformat=unixtime"
+        )
+        response = requests.get(f"{BASE_URL}?{params}", timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
 
     def update(self):
-        self.data = requests.get(
-            f"https://api.openweathermap.org/data/3.0/onecall?lat={self.latitude}&lon={self.longitude}&lang=fr&appid={self.api_key}",
-            timeout=DEFAULT_TIMEOUT,
-        ).json()
+        self.data = self._fetch()
+        self.sunrise = self.data["daily"]["sunrise"][0]
+        self.sunset = self.data["daily"]["sunset"][0]
         return self.data
 
     def current_time(self):
         return time.strftime(
-            "%d/%m/%Y %H:%M", time.localtime(self.data["current"]["dt"])
+            "%d/%m/%Y %H:%M", time.localtime(self.data["current"]["time"])
         )
 
     def current_temp(self):
-        return "{:.0f}".format(self.data["current"]["temp"] - 273.15) + "°C"
+        return "{:.0f}".format(self.data["current"]["temperature_2m"]) + "°C"
 
     def current_hum(self):
-        return "{:.0f}".format(self.data["current"]["humidity"]) + "%"
+        return "{:.0f}".format(self.data["current"]["relative_humidity_2m"]) + "%"
 
     def current_cloud_cov(self):
-        return "{:.0f}".format(self.data["current"]["clouds"]) + "%"
+        return "{:.0f}".format(self.data["current"]["cloud_cover"]) + "%"
 
     def current_sunrise(self):
-        return time.strftime("%H:%M", time.localtime(self.data["current"]["sunrise"]))
+        return time.strftime("%H:%M", time.localtime(self.sunrise))
 
     def current_sunset(self):
-        return time.strftime("%H:%M", time.localtime(self.data["current"]["sunset"]))
+        return time.strftime("%H:%M", time.localtime(self.sunset))
 
     def current_wind(self):
-        deg = self.data["current"]["wind_deg"]
+        deg = self.data["current"]["wind_direction_10m"]
         if deg < 30 or deg >= 330:
             direction = "Nord"
         elif 30 <= deg < 60:
@@ -73,37 +127,41 @@ class Weather:
             direction = "Nord Ouest"
         else:
             direction = "N/A"
-        return (
-            "{:.0f}".format(self.data["current"]["wind_speed"] * 3.6) + "km/h",
-            direction,
-        )
+        # Open-Meteo renvoie déjà le vent en km/h
+        return "{:.0f}".format(self.data["current"]["wind_speed_10m"]) + "km/h", direction
 
     def current_weather(self):
-        description = self.data["current"]["weather"][0]["id"]
-        return description
+        return self.data["current"]["weather_code"]
 
     def rain_next_hour(self):
         rain_data = []
-        if "minutely" in self.data and len(self.data["minutely"]) > 0:
-            # Mode minutely : "10'", "20'", ..., "50'", puis "1h"
-            for i in range(10, 60, 10):
-                if i < len(self.data["minutely"]):
-                    precipitation = self.data["minutely"][i].get("precipitation", 0)
-                    time_str = f"{i}'"
-                    rain_data.append((time_str, precipitation))
-            if len(self.data["minutely"]) >= 60:
-                precipitation = self.data["minutely"][59].get("precipitation", 0)
-                rain_data.append(("1h", precipitation))
-        elif "hourly" in self.data and len(self.data["hourly"]) > 0:
-            # Mode hourly : "1h", "2h", etc.
-            for idx, hour in enumerate(self.data["hourly"][:6], start=1):
-                precipitation = hour.get("rain", {}).get("1h", 0)
-                time_str = f"{idx}h"
-                rain_data.append((time_str, precipitation))
+        minutely = self.data.get("minutely_15")
+        if minutely and len(minutely.get("time", [])) > 0:
+            labels = ["15'", "30'", "45'", "1h"]
+            for i in range(min(4, len(minutely["time"]))):
+                precipitation = minutely["precipitation"][i] or 0
+                rain_data.append((labels[i], precipitation))
+        elif "hourly" in self.data and len(self.data["hourly"]["time"]) > 0:
+            idx = self._now_index()
+            for offset in range(1, 7):
+                pos = idx + offset
+                if pos < len(self.data["hourly"]["time"]):
+                    precipitation = self.data["hourly"]["precipitation"][pos] or 0
+                    rain_data.append((f"{offset}h", precipitation))
         else:
-            # Aucune donnée disponible
             rain_data.append(("Erreur", 0))
         return rain_data
+
+    def _now_index(self):
+        now = self.data["current"]["time"]
+        times = self.data["hourly"]["time"]
+        index = 0
+        for i, ts in enumerate(times):
+            if ts <= now:
+                index = i
+            else:
+                break
+        return index
 
     def hourly_forecast(self):
         hourly = {
@@ -111,30 +169,15 @@ class Weather:
             "+6h": {"temp": "", "pop": "", "id": ""},
             "+12h": {"temp": "", "pop": "", "id": ""},
         }
-        # +3h
-        hourly["+3h"]["temp"] = (
-            "{:.0f}".format(self.data["hourly"][3]["temp"] - 273.15) + "°C"
-        )
-        hourly["+3h"]["pop"] = (
-            "{:.0f}".format(self.data["hourly"][3]["pop"] * 100) + "%"
-        )
-        hourly["+3h"]["id"] = self.data["hourly"][3]["weather"][0]["id"]
-        # +6h
-        hourly["+6h"]["temp"] = (
-            "{:.0f}".format(self.data["hourly"][6]["temp"] - 273.15) + "°C"
-        )
-        hourly["+6h"]["pop"] = (
-            "{:.0f}".format(self.data["hourly"][6]["pop"] * 100) + "%"
-        )
-        hourly["+6h"]["id"] = self.data["hourly"][6]["weather"][0]["id"]
-        # +12h
-        hourly["+12h"]["temp"] = (
-            "{:.0f}".format(self.data["hourly"][12]["temp"] - 273.15) + "°C"
-        )
-        hourly["+12h"]["pop"] = (
-            "{:.0f}".format(self.data["hourly"][12]["pop"] * 100) + "%"
-        )
-        hourly["+12h"]["id"] = self.data["hourly"][12]["weather"][0]["id"]
+        base = self._now_index()
+        for key, offset in (("+3h", 3), ("+6h", 6), ("+12h", 12)):
+            pos = base + offset
+            hourly[key]["temp"] = (
+                "{:.0f}".format(self.data["hourly"]["temperature_2m"][pos]) + "°C"
+            )
+            pop = self.data["hourly"]["precipitation_probability"][pos] or 0
+            hourly[key]["pop"] = "{:.0f}".format(pop) + "%"
+            hourly[key]["id"] = self.data["hourly"]["weather_code"][pos]
         return hourly
 
     def daily_forecast(self):
@@ -147,149 +190,91 @@ class Weather:
         i = 1
         for key in daily.keys():
             daily[key]["date"] = time.strftime(
-                "%A", time.localtime(self.data["daily"][i]["dt"])
+                "%A", time.localtime(self.data["daily"]["time"][i])
             )
             daily[key]["min"] = (
-                "{:.0f}".format(self.data["daily"][i]["temp"]["min"] - 273.15) + "°C"
+                "{:.0f}".format(self.data["daily"]["temperature_2m_min"][i]) + "°C"
             )
             daily[key]["max"] = (
-                "{:.0f}".format(self.data["daily"][i]["temp"]["max"] - 273.15) + "°C"
+                "{:.0f}".format(self.data["daily"]["temperature_2m_max"][i]) + "°C"
             )
-            daily[key]["pop"] = (
-                "{:.0f}".format(self.data["daily"][i]["pop"] * 100) + "%"
-            )
-            daily[key]["id"] = self.data["daily"][i]["weather"][0]["id"]
+            pop = self.data["daily"]["precipitation_probability_max"][i] or 0
+            daily[key]["pop"] = "{:.0f}".format(pop) + "%"
+            daily[key]["id"] = self.data["daily"]["weather_code"][i]
             i += 1
         return daily
 
     def graph_p_t(self):
-        if self.prevision[0] != self.data["daily"][0]["dt"]:
-            self.prevision[0] = self.data["daily"][0]["dt"]
+        today = self.data["daily"]["time"][0]
+        if self.prevision[0] != today:
+            self.prevision[0] = today
             self.prevision = [self.prevision[0], self.prevision[1][1:]]
             self.prevision[1].append(
                 [
-                    self.data["daily"][0]["pressure"],
-                    round(self.data["daily"][0]["temp"]["day"] - 273.15, 0),
+                    round(self.data["current"]["pressure_msl"]),
+                    round(self.data["current"]["temperature_2m"]),
                 ]
             )
 
     def weather_description(self, id):
         current_time = time.strftime("%H:%M", time.localtime())
         if "08:00" <= current_time <= "20:00":
-            icon = "sun"
-            weather_detail = "Beau temps"
-            if id // 100 != 8:
-                id = id // 100
-                if id == 2:
-                    icon = "thunder"
-                    weather_detail = "Orage"
-                elif id == 3:
-                    icon = "drizzle"
-                    weather_detail = "Bruine"
-                elif id == 5:
-                    icon = "rain"
-                    weather_detail = "Pluie"
-                elif id == 6:
-                    icon = "snow"
-                    weather_detail = "Neige"
-                elif id == 7:
-                    icon = "atm"
-                    weather_detail = "Brouillard"
-                else:
-                    weather_detail = "Erreur"
-            else:
-                if id == 801:
-                    icon = "25_clouds"
-                    weather_detail = "Peu nuageux"
-                elif id == 802:
-                    icon = "50_clouds"
-                    weather_detail = "Nuageux"
-                elif id == 803 or id == 804:
-                    icon = "100_clouds"
-                    weather_detail = "Couvert"
+            icon, weather_detail = WMO_DAY.get(id, ("sun", "Beau temps"))
         else:
-            icon = "moon"
-            weather_detail = "Beau temps"
-            if id // 100 != 8:
-                id = id // 100
-                if id == 2:
-                    icon = "thunder"
-                    weather_detail = "Orage"
-                elif id == 3:
-                    icon = "drizzle"
-                    weather_detail = "Bruine"
-                elif id == 5:
-                    icon = "rain"
-                    weather_detail = "Pluie"
-                elif id == 6:
-                    icon = "snow"
-                    weather_detail = "Neige"
-                elif id == 7:
-                    icon = "atm"
-                    weather_detail = "Brouillard"
-                else:
-                    weather_detail = "Erreur"
-            else:
-                if id == 801:
-                    icon = "26_cloudy_night"
-                    weather_detail = "Peu nuageux"
-                elif id == 802:
-                    icon = "50_clouds"
-                    weather_detail = "Nuageux"
-                elif id == 803 or id == 804:
-                    icon = "100_clouds"
-                    weather_detail = "Couvert"
+            icon, weather_detail = WMO_NIGHT.get(id, ("moon", "Beau temps"))
         return icon, weather_detail
 
     def alert(self):
-        try:
-            alert_descrip = self.data["alerts"][0]["event"]
-        except Exception:
-            alert_descrip = 0
-        return alert_descrip
+        # Open-Meteo ne fournit pas d'alertes officielles
+        return 0
 
 
 class Pollution:
     def __init__(self):
         self.max_lvl_pollution = {
             "co": 10000,
-            "no": 30,
+            "no": None,
             "no2": 40,
             "o3": 120,
             "so2": 50,
             "pm2_5": 20,
             "pm10": 30,
-            "nh3": 100,
+            "nh3": None,
         }
-        pass
 
-    def update(self, lattitude, longitude, api_id):
-        self.data = requests.get(
-            f"http://api.openweathermap.org/data/3.0/air_pollution?lat={lattitude}&lon={longitude}&appid={api_id}",
-            timeout=DEFAULT_TIMEOUT,
-        ).json()
+    def update(self, lattitude, longitude, api_id=None):
+        params = (
+            f"latitude={lattitude}&longitude={longitude}"
+            "&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,"
+            "sulphur_dioxide,ozone&timezone=auto"
+        )
+        response = requests.get(f"{AIR_QUALITY_URL}?{params}", timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        self.data = response.json()
         return self.data
 
     def co(self):
-        return self.data["list"][0]["components"]["co"]
+        return self.data["current"]["carbon_monoxide"]
 
     def no(self):
-        return self.data["list"][0]["components"]["no"]
+        # Non fourni par Open-Meteo
+        return 0
 
     def no2(self):
-        return self.data["list"][0]["components"]["no2"]
+        return self.data["current"]["nitrogen_dioxide"]
 
     def o3(self):
-        return self.data["list"][0]["components"]["o3"]
+        return self.data["current"]["ozone"]
 
     def so2(self):
-        return self.data["list"][0]["components"]["so2"]
+        return self.data["current"]["sulphur_dioxide"]
 
     def pm2_5(self):
-        return self.data["list"][0]["components"]["pm2_5"]
+        return self.data["current"]["pm2_5"]
 
     def pm10(self):
-        return self.data["list"][0]["components"]["pm10"]
+        return self.data["current"]["pm10"]
 
     def nh3(self):
-        return self.data["list"][0]["components"]["nh3"]
+        # Non fourni par Open-Meteo
+        return 0

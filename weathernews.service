@@ -1,0 +1,34 @@
+[Unit]
+Description=Weather & News E-Ink refresh (7.5" Waveshare B V2)
+# On peut forcer le démarrage après le réseau et le SPI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/home/pi
+RuntimeDirectory=weathernews
+RuntimeDirectoryMode=0755
+
+# Un seul run à la fois
+# (systemd gère le non-chevauchement pour Type=oneshot si déclenché par le timer,
+# mais flock ajoute une sécurité supplémentaire côté script)
+ExecStart=/usr/bin/flock -n /run/weathernews/weathernews.lock \
+/usr/bin/timeout -k 20 4m /usr/bin/python3 /home/pi/Assistant_main.py
+
+# Baisse la priorité I/O et CPU pour ne pas gêner le système
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# Limites de ressources (optionnel)
+# MemoryMax=200M
+# CPUQuota=50%
+
+# Variables d'environnement
+EnvironmentFile=/etc/default/weathernews
+
+# Pour voir la sortie avec journalctl
+StandardOutput=journal
+StandardError=journal

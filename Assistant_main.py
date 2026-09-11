@@ -32,7 +32,7 @@ logging.basicConfig(
 )
 
 # ---------- Chargement .env ----------
-load_dotenv()
+load_dotenv(os.path.join(dirname, ".env"), override=True)
 colorama.init(autoreset=True)
 
 lat = os.environ.get("LATITUDE")
@@ -41,6 +41,12 @@ city = os.environ.get("CITY")
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
 iscleaned = os.environ.get("CLEANED")
+print(
+    "Clé news chargée depuis",
+    os.path.join(dirname, ".env"),
+    ":",
+    (api_key_news[:8] + "...") if api_key_news else "ABSENTE",
+)
 
 debug = 0
 if debug == 0:
@@ -168,16 +174,16 @@ def main():
             display.draw_black.rectangle(
                 (20, 175, 320, 195), fill=255, outline=0, width=1
             )
+            cell_width = (320 - 20) // len(data_rain)
             for i in range(len(data_rain)):
-                display.draw_black.line(
-                    (20 + i * 50, 175, 20 + i * 50, 195), fill=0, width=1
-                )
+                left = 20 + i * cell_width
+                display.draw_black.line((left, 175, left, 195), fill=0, width=1)
                 display.draw_black.text(
-                    (20 + i * 50, 195), data_rain[i][0], fill=0, font=font16
+                    (left, 195), data_rain[i][0], fill=0, font=font16
                 )
                 if data_rain[i][1] != 0:
                     display.draw_red.rectangle(
-                        (20 + i * 50, 175, 20 + (i + 1) * 50, 195), fill=0
+                        (left, 175, left + cell_width, 195), fill=0
                     )
     except Exception:
         pass
@@ -372,6 +378,26 @@ if __name__ == "__main__":
 
             print(Fore.YELLOW + Style.BRIGHT + "Mise en veille...")
             epd.init()
+            # Cycle de reset hardware périodique (~ tous les 100 rafraîchissements)
+            cycle_file = os.path.join(dirname, "epd_cycle_count")
+            cycle_count = 0
+            try:
+                with open(cycle_file, "r") as file:
+                    cycle_count = int(file.read().strip() or 0)
+            except Exception:
+                pass
+            cycle_count += 1
+            if cycle_count >= 100:
+                cycle_count = 0
+                print(Fore.CYAN + "Reset hardware périodique de l'écran e-paper")
+                logger.warning("Power cycle hardware de l'écran (cycle 100)")
+                epd7in5b_V2.epdconfig.power_cycle()
+                epd = epd7in5b_V2.EPD()
+            try:
+                with open(cycle_file, "w") as file:
+                    file.write(str(cycle_count))
+            except Exception as e:
+                logger.warning(f"Impossible d'écrire le compteur de cycle : {e}")
             epd.sleep()
             print(Fore.CYAN + "ZZZzzzzZZZzzz")
             print(Fore.CYAN + "Terminé")
@@ -386,6 +412,7 @@ if __name__ == "__main__":
             try:
                 epd7in5b_V2.epdconfig.module_exit(cleanup=True)
                 time.sleep(2)
+                epd7in5b_V2.epdconfig.full_reboot()
                 epd = epd7in5b_V2.EPD()
                 epd.init()
                 epd.Clear()

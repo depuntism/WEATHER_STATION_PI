@@ -9,6 +9,8 @@ python-dotenv = "*"
 rpi-lgpio = "0.5"
 pillow = "10.3.0"
 colorama = "*"
+gpiozero = "2.0.*"
+spidev = "3.6"
 
 [dev-packages]
 

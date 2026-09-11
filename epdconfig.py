@@ -158,6 +158,17 @@ class RaspberryPi:
             self.GPIO_PWR_PIN.close()
             self.GPIO_BUSY_PIN.close()
 
+    def power_cycle(self):
+        logger.debug("hardware power cycle e-paper")
+        self.SPI.close()
+        self.GPIO_PWR_PIN.off()
+        self.delay_ms(2000)
+        self.GPIO_PWR_PIN.on()
+        self.delay_ms(500)
+        self.SPI.open(0, 0)
+        self.SPI.max_speed_hz = 4000000
+        self.SPI.mode = 0b00
+
 
 class JetsonNano:
     # Pin definition
@@ -325,5 +336,14 @@ else:
 
 for func in [x for x in dir(implementation) if not x.startswith("_")]:
     setattr(sys.modules[__name__], func, getattr(implementation, func))
+
+
+def full_reboot():
+    global implementation
+    implementation = RaspberryPi()
+    for func in [x for x in dir(implementation) if not x.startswith("_")]:
+        setattr(sys.modules[__name__], func, getattr(implementation, func))
+    logger.warning("EPD complete reinitialization (GPIO + SPI)")
+
 
 ### END OF FILE ###

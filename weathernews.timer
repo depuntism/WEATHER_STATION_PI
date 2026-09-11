@@ -1,0 +1,19 @@
+[Unit]
+Description=Run Weather & News refresh between 08:00 to 00:00)
+
+[Timer]
+# Cycle de journée : toutes les 6 min de 08:00 à 23:54
+OnCalendar=*-*-* 08..23:0/4:00
+
+# Ultime exécution à minuit pour le nettoyage de l'écran
+OnCalendar=*-*-* 00:00
+
+AccuracySec=1s
+
+# On force systemd à être le plus précis possible
+RandomizedDelaySec=0
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+

@@ -12,13 +12,9 @@ class News:
         self.news_list = None
 
     def update(self, api_id):
-        if not api_id or api_id == "None":
-            print("Erreur : clé API absente ou vide (NEWS_API_KEY du fichier .env)")
-            self.news_list = None
-            return None
         try:
             response = requests.get(
-                f"https://api.currentsapi.services/v1/latest-news?language=fr&apiKey={api_id}",
+                f"https://newsdata.io/api/1/latest?country=fr&category=top&domainurl=lefigaro.fr&apikey={api_id}",
                 timeout=DEFAULT_TIMEOUT,
             )
             response.raise_for_status()
@@ -38,8 +34,8 @@ class News:
         if self.news_list is None:
             print("Erreur : Aucune actualité disponible")
             return []
-        if "news" in self.news_list:
-            for article in self.news_list["news"]:
+        if "results" in self.news_list:
+            for article in self.news_list["results"]:
                 if "title" in article:
                     line = article["title"]
                     line = textwrap.wrap(line, width=60)
@@ -49,5 +45,5 @@ class News:
                     list_news.append(["Titre non disponible"])
             return list_news
         else:
-            print("Erreur : 'news' n'est pas dans la réponse de l'API.")
+            print("Erreur : 'results' n'est pas dans la réponse de l'API.")
             return []

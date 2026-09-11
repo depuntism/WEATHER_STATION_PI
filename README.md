@@ -1,6 +1,7 @@
 # Station Météo & Actualités — Ecran e-Ink 7,5"
 
 Station météo autonome sur **Raspberry Pi** affichant la météo du jour et les actualités françaises sur un écran **e-paper Waveshare 7,5" (B V2, 800×480, bicolore noir/rouge)**.
+Ceci est un fork du projet initial créé par Aerodynamics (https://github.com/aerodynamics-py/WEATHER_STATION_PI)
 
 ## Fonctionnalités
 

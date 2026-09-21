@@ -122,23 +122,23 @@ Attendu dans la console (~50 s) : `Météo mise à jour` → `Actualité mise à
 
 Deux fichiers sont fournis à la racine du projet :
 
-- `weatherstation.service` : exécute un cycle complet (`flock` anti-chevauchement, timeout 4 min, faible priorité CPU/IO)
-- `weatherstation.timer` : déclenche toutes les **6 minutes**
+- `weathernews.service` : exécute un cycle complet (`flock` anti-chevauchement, timeout 4 min, faible priorité CPU/IO)
+- `weathernews.timer` : déclenche toutes les **6 minutes**
 
 ```bash
 # Adaptez le chemin du python selon votre installation :
 #   pipenv  -> ExecStart=... /home/pi/weather_station/.venv/bin/pipenv run python3 Assistant_main.py
 #   venv    -> ExecStart=... /home/pi/weather_station/.venv/bin/python3 Assistant_main.py
 #   système -> ExecStart=... /usr/bin/python3 Assistant_main.py
-# Le reste (flock, timeout, WorkingDirectory) est déjà paramétré dans weatherstation.service :
+# Le reste (flock, timeout, WorkingDirectory) est déjà paramétré dans weathernews.service :
 #   WorkingDirectory=/home/pi/weather_station   (dossier du projet)
 
-sudo cp weatherstation.service weatherstation.timer /etc/systemd/system/
+sudo cp weathernews.service weathernews.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now weatherstation.timer
+sudo systemctl enable --now weathernews.timer
 
 # Vérifier
-systemctl list-timers | grep weatherstation
+systemctl list-timers | grep weathernews
 ```
 
 > **Attention environnement** : le script charge toujours le `.env` situé **à côté de lui-même** avec `override=True`. Votre `.env` à jour doit donc vivre dans le dossier du script. Évitez de dupliquer ces variables ailleurs (ex. `EnvironmentFile=` d'une unité), au risque que la source de vérité soit ambiguë.
@@ -157,18 +157,18 @@ python3 start_weathernews.py
 
 | Vérification | Commande | Attendu |
 |---|---|---|
-| Écran rafraîchi | `journalctl -u weatherstation --since "-1 hour"` | Séquence complète sans `Exception` |
+| Écran rafraîchi | `journalctl -u weathernews --since "-1 hour"` | Séquence complète sans `Exception` |
 | Météo OK | `python3 -c "from weather import Weather; w=Weather('43.6','1.433'); print(w.current_temp())"` | Température en °C |
-| Actualités OK | `journalctl -u weatherstation \| grep -a "Actualité"` | `Actualité mise à jour`, **pas** de ligne `401` |
+| Actualités OK | `journalctl -u weathernews \| grep -a "Actualité"` | `Actualité mise à jour`, **pas** de ligne `401` |
 | Log interne | `tail -20 conf/logging/main_error.log` | Erreurs éventuelles ; seuls les `logger` y sont écrits (les `print` vont dans le journal) |
 | Power cycle écran | `grep -ai "reset hardware" conf/logging/main_error.log` | Une entrée toutes les ~100 cycles (~10 h) |
-| Service actif | `systemctl status weatherstation.timer` | `Active: waiting`, prochaine exécution affichée |
+| Service actif | `systemctl status weathernews.timer` | `Active: waiting`, prochaine exécution affichée |
 
 ### Forcer un power cycle immédiat (test)
 
 ```bash
 echo 99 > epd_cycle_count
-sudo systemctl restart weatherstation
+sudo systemctl restart weathernews
 sleep 60
 grep -ai "power cycle" conf/logging/main_error.log
 ```
@@ -180,7 +180,7 @@ grep -ai "power cycle" conf/logging/main_error.log
 | « Aucune actualité disponible » mais météo OK | Clé `NEWS_API_KEY` absente/erronée, ou variable injectée dupliquée (ex. `EnvironmentFile=`) | Vérifiez le journal : `apiKey=pub_...` dans l'URL = vieille clé. Mettez la bonne clé dans `.env` (maître grâce à `override=True`), retirez toute duplication systemd |
 | Écran ne se rafraîchit plus après plusieurs jours | Pilote SPI / contrôleur e-paper figé (connu) | Le `power_cycle` toutes les ~100 cycles gère le problème seul. Le chemin d'erreur reconstruit aussi GPIO+SPI (`full_reboot`) |
 | `grep` répond « fichiers binaires » | Encodage du log | Ajoutez `-a` : `grep -a ...` |
-| Rien dans `Assistant_main.log` | Vous utilisez systemd : la sortie va dans journalctl | `journalctl -u weatherstation -f` (le fichier log n'est écrit que par `logger`) |
+| Rien dans `Assistant_main.log` | Vous utilisez systemd : la sortie va dans journalctl | `journalctl -u weathernews -f` (le fichier log n'est écrit que par `logger`) |
 | Mauvaise clé chargée malgré le `.env` correct | Une variable d'environnement existante écrase `.env` (comportement dotenv) | `load_dotenv(..., override=True)` est déjà activé — redéployez la dernière version du script |
 
 ## Structure du projet
@@ -197,8 +197,8 @@ grep -ai "power cycle" conf/logging/main_error.log
 ├── font/                  # Polices disponibles (sélection dans display.py, font_choice)
 ├── start_weathernews.py   # Autostart cron (alternative historique)
 ├── clear_shutdown.py      # Nettoie l'écran avant extinction
-├── weatherstation.service # Unité systemd (oneshot)
-├── weatherstation.timer   # Timer systemd (toutes les 6 min)
+├── weathernews.service    # Unité systemd (oneshot)
+├── weathernews.timer      # Timer systemd (toutes les 6 min)
 ├── Pipfile / Pipfile.lock # Dépendances Python (pipenv)
 ├── requirements.txt       # Dépendances Python (pip)
 ├── .env.example           # Template de configuration

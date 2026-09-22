@@ -116,7 +116,7 @@ def main():
     )  # HORIZONTAL SEPARATION
     # UPDATED AT
     display.draw_black.text(
-        (10, 8), f"Mis à jour le {weather.current_time()}", fill=0, font=font11
+        (10, 8), f"Mis à jour le {time.strftime('%d/%m/%Y %H:%M', time.localtime())}", fill=0, font=font11
     )
     ###################################################################################################################
     # CURRENT WEATHER

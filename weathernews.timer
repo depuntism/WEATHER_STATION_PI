@@ -2,7 +2,7 @@
 Description=Run Weather & News refresh between 08:00 to 00:00)
 
 [Timer]
-# Cycle de journée : toutes les 6 min de 08:00 à 23:54
+# Cycle de journée : toutes les 4 min de 08:00 à 23:56
 OnCalendar=*-*-* 08..23:0/4:00
 
 # Ultime exécution à minuit pour le nettoyage de l'écran

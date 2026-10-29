@@ -11,6 +11,7 @@ from dotenv import load_dotenv, set_key
 
 from display import *
 from news import *
+from tisseo import *
 from weather import *
 from tools import graph
 
@@ -40,6 +41,10 @@ lon = os.environ.get("LONGITUDE")
 city = os.environ.get("CITY")
 api_key_weather = os.environ.get("WEATHER_API_KEY")
 api_key_news = os.environ.get("NEWS_API_KEY")
+api_key_tisseo = os.environ.get("TISSEO_API_KEY")
+tisseo_stop_area = os.environ.get("TISSEO_STOP_AREA_ID")
+tisseo_stop_name = os.environ.get("TISSEO_STOP_NAME") or "Jolimont"
+tisseo_line = os.environ.get("TISSEO_LINE") or "A"
 iscleaned = os.environ.get("CLEANED")
 print(
     "Clé news chargée depuis",
@@ -290,35 +295,77 @@ def main():
             (360, 45), "Aucune actualité disponible.", fill=0, font=font14
         )
     else:
-        for i in range(min(5, len(news_selected))):
-            if len(news_selected) == 1:
-                display.draw_black.text(
-                    (360, 45), news_selected[0], fill=0, font=font14
-                )
-                break
-            else:
-                if len(news_selected[i]) <= 3:
-                    for j in range(len(news_selected[i])):
-                        display.draw_black.text(
-                            (360, 45 + j * 15 + i * 60),
-                            news_selected[i][j],
-                            fill=0,
-                            font=font14,
-                        )
-                else:
-                    for j in range(2):
-                        display.draw_black.text(
-                            (360, 45 + j * 15 + i * 60),
-                            news_selected[i][j],
-                            fill=0,
-                            font=font14,
-                        )
+        for i in range(min(3, len(news_selected))):
+            lines = news_selected[i]
+            if len(lines) <= 3:
+                for j in range(len(lines)):
                     display.draw_black.text(
-                        (360, 45 + 2 * 15 + i * 60),
-                        f"{news_selected[i][2]}[...]",
+                        (360, 45 + j * 15 + i * 60),
+                        lines[j],
                         fill=0,
                         font=font14,
                     )
+            else:
+                for j in range(2):
+                    display.draw_black.text(
+                        (360, 45 + j * 15 + i * 60),
+                        lines[j],
+                        fill=0,
+                        font=font14,
+                    )
+                display.draw_black.text(
+                    (360, 45 + 2 * 15 + i * 60),
+                    f"{lines[2]}[...]",
+                    fill=0,
+                    font=font14,
+                )
+    ###################################################################################################################
+    # MÉTRO TISSÉO (prochains passages + info ligne)
+    departures = tisseo.next_departures()
+
+    # Filet de séparation entre les actualités et le métro
+    # (part de la ligne verticale x=353 pour la toucher)
+    display.draw_black.line((353, 214, 790, 214), fill=0, width=1)
+
+    metro_header = f"MÉTRO · {tisseo_stop_name}"
+    if any(not dep["realtime"] for dep in departures):
+        # Le métro n'a pas de temps réel : les horaires sont théoriques
+        metro_header += " (~ théorique)"
+    display.draw_black.text((360, 220), metro_header, fill=0, font=font24)
+
+    metro_y = 252
+    usable = departures[:2]
+    if not usable:
+        empty_label = (
+            "Horaires indisponibles"
+            if tisseo.line_state() == "indisponible"
+            else "Aucun passage annoncé"
+        )
+        display.draw_black.text((360, metro_y), empty_label, fill=0, font=font14)
+    else:
+        for dep in usable:
+            marker = "~" if not dep["realtime"] else ""
+            times = " / ".join(marker + format_wait(sec) for sec in dep["times"])
+            display.draw_black.text(
+                (360, metro_y),
+                f"> {dep['direction']} : {times}",
+                fill=0,
+                font=font14,
+            )
+            metro_y += 18
+
+    # Statut de la ligne (rouge si perturbation) + détail de l'info réseau
+    status = tisseo.status_text()
+    if status:
+        status_draw = (
+            display.draw_red if tisseo.status_alert() else display.draw_black
+        )
+        status_draw.text((360, 290), status, fill=0, font=font12)
+
+    detail_y = 306
+    for line in tisseo.detail_lines(width=76, max_lines=3):
+        display.draw_black.text((360, detail_y), line, fill=0, font=font11)
+        detail_y += 13
     ###################################################################################################################
     print(Fore.GREEN + "Mise à jour de l'écran...")
     print(Fore.GREEN + "\tImpression en cours...")
@@ -338,6 +385,7 @@ if __name__ == "__main__":
             weather = Weather(lat, lon, api_key_weather)
             # pollution = Pollution()
             news = News()
+            tisseo = Tisseo(api_key_tisseo, tisseo_stop_area, tisseo_line)
             break
         except Exception as e:
             current_time = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())
@@ -364,15 +412,19 @@ if __name__ == "__main__":
             )
             check_for_shutdown()
 
-            epd.init()
-            epd.Clear()
-
-            # Update values
+            # Update values (l'écran garde l'image précédente pendant les requêtes)
             weather.update()
             print(Fore.GREEN + "Météo mise à jour")
             # pollution.update(lat, lon, api_key_weather)
             news.update(api_key_news)
             print(Fore.GREEN + "Actualité mise à jour")
+            tisseo.update()
+            print(Fore.GREEN + "Métro mis à jour")
+
+            # Effacement juste avant le rendu : si une requête ou un dessin échoue,
+            # l'ancienne image reste affichée au lieu d'un écran blanc.
+            epd.init()
+            epd.Clear()
 
             main()
 
@@ -415,7 +467,6 @@ if __name__ == "__main__":
                 epd7in5b_V2.epdconfig.full_reboot()
                 epd = epd7in5b_V2.EPD()
                 epd.init()
-                epd.Clear()
                 main()
                 epd.init()
                 epd.sleep()
@@ -423,4 +474,5 @@ if __name__ == "__main__":
                 break
             except Exception as e2:
                 logger.critical(f"Echec recovery EPD: {e2}", exc_info=True)
-                time.sleep(5)
+                # Évite une boucle d'écran blanc / rafraîchissement toutes les 10 s
+                time.sleep(60)
